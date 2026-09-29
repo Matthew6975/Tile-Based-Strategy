@@ -1,0 +1,14 @@
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/bin/Debug/net10.0/Tile-Based Strategy
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/bin/Debug/net10.0/Tile-Based Strategy.deps.json
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/bin/Debug/net10.0/Tile-Based Strategy.runtimeconfig.json
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/bin/Debug/net10.0/Tile-Based Strategy.dll
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/bin/Debug/net10.0/Tile-Based Strategy.pdb
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.GeneratedMSBuildEditorConfig.editorconfig
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.AssemblyInfoInputs.cache
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.AssemblyInfo.cs
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.csproj.CoreCompileInputs.cache
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.dll
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/refint/Tile-Based Strategy.dll
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.pdb
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/Tile-Based Strategy.genruntimeconfig.cache
+/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/obj/Debug/net10.0/ref/Tile-Based Strategy.dll

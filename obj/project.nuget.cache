@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "c4UX2MoDBRM=",
+  "success": true,
+  "projectFilePath": "/home/bomb/storage/Obsidian/Coding_Projects/Tile-Based Strategy/Tile-Based Strategy.csproj",
+  "expectedPackageFiles": [
+    "/home/bomb/.nuget/packages/microsoft.aspnetcore.app.ref/10.0.12/microsoft.aspnetcore.app.ref.10.0.12.nupkg.sha512"
+  ],
+  "logs": []
+}
