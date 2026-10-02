@@ -40,6 +40,20 @@ public class Grid(int width, int height)
         }
     }
 
+    public void DespawnUnit(Unit unit)
+    {
+        if (IsInBounds(unit.X, unit.Y) && _tile[unit.X, unit.Y].Occupant == unit)
+        {
+            _tile[unit.X, unit.Y].Occupant = null;
+            unit.X = -1;
+            unit.Y = -1;
+        }
+        else
+        {
+            Console.WriteLine("Unit is not on the board!");
+        }
+    }
+
     public void MoveUnit(Unit unit, int newX, int newY)
     {
         if (!IsInBounds(newX, newY))

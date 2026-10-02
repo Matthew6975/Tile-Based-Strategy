@@ -1,6 +1,6 @@
 public class Combat
 {
-    public void Attack(Unit attacker, Unit defender)
+    public void Attack(Unit attacker, Unit defender, Grid grid)
     {
         if (attacker.EquippedWeapon == null)
         {
@@ -12,7 +12,53 @@ public class Combat
 
         int distance = CalculateDistance(attacker.X, attacker.Y, defender.X, defender.Y);
 
-        //This is not done yet, keep adding more.
+        if (distance > weapon.MaxRange)
+        {
+            Console.WriteLine($"{defender.Name} is out of range for {attacker.Name}'s {weapon.Name}!");
+            return;
+        }
+
+        else if (distance < weapon.MinRange)
+        {
+            Console.WriteLine($"{defender.Name} is too close for {attacker.Name}'s {weapon.Name}!");
+            return;
+        }
+        else
+        {
+            Tile defenderTile = grid.GetTile(defender.X, defender.Y);
+
+            CoverType cover = GetFacingCover(defenderTile, attacker);
+            // Calculate hit chance based on weapon accuracy and cover
+            float hitChance = weapon.Accuracy;
+
+            if (cover == CoverType.Full)
+            {
+                hitChance = 0.0f; // Full cover means no chance to hit
+            }
+            else if (cover == CoverType.Half)
+            {
+                hitChance *= 0.5f; // Half cover reduces hit chance by 50%
+            }
+
+            hitChance *= 100; // Convert to percentage (i.e., 0.75 becomes 75%)
+            int roll = new Random().Next(0, 101);
+            // if roll is smaller (inside) or equal to the hit chance, the attack succeeds.
+            if (roll <= hitChance)
+            {
+                defender.Health -= weapon.Damage;
+                Console.WriteLine($"{attacker.Name} hits {defender.Name} for {weapon.Damage} damage! {defender.Name} now has {defender.Health} health.");
+            }
+            else
+            {
+                Console.WriteLine($"{attacker.Name} misses {defender.Name}!");
+            }
+
+            if (defender.Health <= 0)
+            {
+                Console.WriteLine($"{defender.Name} has been defeated by {attacker.Name}!");
+                grid.DespawnUnit(defender);
+            }
+        }    
     }
 
 

@@ -1,8 +1,8 @@
-public class Weapon()
+public class Weapon
 {
-    public string ?Name { get; set; }
-    public int Damage { get; set; } 
-    public int MinRange { get; set; }
-    public int MaxRange { get; set; }
-    public float Accuracy { get; set; }
+    public string ?Name { get; set; } // what the weapon is called (blaster, pistol, sniper rifle, etc.)
+    public int Damage { get; set; }  // how much health is removed from the target upon hit.
+    public int MinRange { get; set; } // Minimum range would be used if a weapon cannot be used in close combat, like an rpg one tile away.
+    public int MaxRange { get; set; } // The typicaL definition of range. How far the weapon can hit.
+    public float Accuracy { get; set; } = 1.0f; // Default accuracy is 100%
 }

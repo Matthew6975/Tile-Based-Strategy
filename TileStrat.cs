@@ -4,13 +4,24 @@ class Program
     {
         Grid grid = new(10, 10);
         grid.BuildMap();
-
         grid.GetTile(3, 2).IsWalkable = false;
         grid.GetTile(3, 3).IsWalkable = false;
-        grid.PrintMap();
 
         Unit hero = new("Player", Team.Player);
         Unit enemy = new("Enemy", Team.Enemy);
+
+        Weapon blaster = new Weapon
+        {
+            Name = "Blaster",
+            Damage = 3,
+            MinRange = 1,
+            MaxRange = 5,
+        };
+
+        hero.EquippedWeapon = blaster;
+
+        Combat combatSystem = new();
+
         grid.SpawnUnit(hero, 0, 0);
         grid.SpawnUnit(enemy, 8, 8);
 
@@ -22,6 +33,7 @@ class Program
         {
             Console.WriteLine($"Player position: ({hero.X}, {hero.Y})");
             Console.WriteLine($"Current move points: {hero.CurrentMovePoints}");
+            Console.WriteLine($"Enemy Health: {enemy.Health}");
             Console.WriteLine("Enter a direction to move (W/A/S/D or Arrow Keys) or Q to quit:");
 
             ConsoleKey key = Console.ReadKey(true).Key;
@@ -40,6 +52,13 @@ class Program
                 Console.WriteLine("Move points reset!");
                 continue;
             }
+            else if (key == ConsoleKey.F) // Attack
+            {
+                combatSystem.Attack(hero, enemy, grid);
+                grid.PrintMap();
+                continue;
+            }
+
             else
             {
                 Console.WriteLine($"Ignored key: {key}. Use WASD or Arrow Keys.");
