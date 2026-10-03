@@ -2,15 +2,16 @@ class Program
 {
     static void Main()
     {
-        Grid grid = new(10, 10);
-        grid.BuildMap();
-        grid.GetTile(3, 2).IsWalkable = false;
-        grid.GetTile(3, 3).IsWalkable = false;
+        Board board = new(10, 10);
+        board.BuildMap();
+        board.GetTile(3, 2).IsWalkable = false;
+        board.GetTile(3, 3).IsWalkable = false;
 
         Unit hero = new("Player", Team.Player);
         Unit enemy = new("Enemy", Team.Enemy);
+        Unit foe = new("Foe", Team.Enemy);
 
-        Weapon blaster = new Weapon
+        Weapon blaster = new()
         {
             Name = "Blaster",
             Damage = 3,
@@ -22,11 +23,12 @@ class Program
 
         Combat combatSystem = new();
 
-        grid.SpawnUnit(hero, 0, 0);
-        grid.SpawnUnit(enemy, 8, 8);
+        board.SpawnUnit(hero, 0, 0);
+        board.SpawnUnit(enemy, 8, 8);
+        board.SpawnUnit(foe, 6, 6);
 
         Console.Clear();
-        grid.PrintMap();
+        board.PrintMap();
 
         bool isRunning = true;
         while (isRunning)
@@ -52,13 +54,64 @@ class Program
                 Console.WriteLine("Move points reset!");
                 continue;
             }
-            else if (key == ConsoleKey.F) // Attack
+            else if (key == ConsoleKey.F) // Enter targeting/attack mode
             {
-                combatSystem.Attack(hero, enemy, grid);
-                grid.PrintMap();
+                List<Unit> validTargets = combatSystem.GetValidTargets(hero, board);
+
+                if (validTargets.Count == 0)
+                {
+                    Console.WriteLine("No valid targets in range! Press any key to continue...");
+                    Console.ReadKey(true);
+                    continue;
+                }
+
+                bool isTargeting = true;
+                int targetIndex = 0;
+
+                while (isTargeting)
+                {
+                    Console.Clear();
+                    board.PrintMap();
+
+                    Unit currentTarget = validTargets[targetIndex];
+                    float hitChance = combatSystem.CalculateHitChance(hero, currentTarget, board);
+
+                    Console.WriteLine("=== TARGETING MODE ===");
+                    Console.WriteLine($"Target: {currentTarget.Name} at ({currentTarget.X}, {currentTarget.Y})");
+                    Console.WriteLine($"Hit Chance: {hitChance}% | Target Health: {currentTarget.Health}");
+                    Console.WriteLine("Use Left/Right Arrows or Tab to cycle targets.");
+                    Console.WriteLine("Press Enter or F to Fire. Press Esc or Q to Cancel.");
+
+                    ConsoleKey targetKey = Console.ReadKey(true).Key;
+
+                    if (targetKey == ConsoleKey.RightArrow || targetKey == ConsoleKey.Tab)
+                    {
+                        targetIndex++;
+                        if(targetIndex >= validTargets.Count()) targetIndex = 0;
+                    }
+                    else if (targetKey == ConsoleKey.LeftArrow)
+                    {
+                        targetIndex--;
+                        if (targetIndex < 0) targetIndex = validTargets.Count() -1;
+                        
+                    }
+                    else if (targetKey == ConsoleKey.F || targetKey == ConsoleKey.Enter)
+                    {
+                        Console.Clear();
+                        combatSystem.Attack(hero, currentTarget, board);
+                        Console.WriteLine("press any key to continue...");
+                        Console.ReadKey(true);
+                        isTargeting = false;   
+                    }
+                    else if (targetKey == ConsoleKey.Q || targetKey == ConsoleKey.Escape)
+                    {
+                        isTargeting = false;
+                    }
+                }
+                Console.Clear();
+                board.PrintMap();
                 continue;
             }
-
             else
             {
                 Console.WriteLine($"Ignored key: {key}. Use WASD or Arrow Keys.");
@@ -72,9 +125,9 @@ class Program
             }
 
             Console.Clear();
-            grid.MoveUnit(hero, targetX, targetY);
+            board.MoveUnit(hero, targetX, targetY);
             hero.CurrentMovePoints--;
-            grid.PrintMap();
+            board.PrintMap();
         }
     }
 }

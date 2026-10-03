@@ -1,6 +1,6 @@
 public class Combat
 {
-    public void Attack(Unit attacker, Unit defender, Grid grid)
+    public void Attack(Unit attacker, Unit defender, Board board)
     {
         if (attacker.EquippedWeapon == null)
         {
@@ -25,22 +25,8 @@ public class Combat
         }
         else
         {
-            Tile defenderTile = grid.GetTile(defender.X, defender.Y);
+            float hitChance = CalculateHitChance(attacker, defender, board);
 
-            CoverType cover = GetFacingCover(defenderTile, attacker);
-            // Calculate hit chance based on weapon accuracy and cover
-            float hitChance = weapon.Accuracy;
-
-            if (cover == CoverType.Full)
-            {
-                hitChance = 0.0f; // Full cover means no chance to hit
-            }
-            else if (cover == CoverType.Half)
-            {
-                hitChance *= 0.5f; // Half cover reduces hit chance by 50%
-            }
-
-            hitChance *= 100; // Convert to percentage (i.e., 0.75 becomes 75%)
             int roll = new Random().Next(0, 101);
             // if roll is smaller (inside) or equal to the hit chance, the attack succeeds.
             if (roll <= hitChance)
@@ -56,9 +42,40 @@ public class Combat
             if (defender.Health <= 0)
             {
                 Console.WriteLine($"{defender.Name} has been defeated by {attacker.Name}!");
-                grid.DespawnUnit(defender);
+                board.DespawnUnit(defender);
             }
         }    
+    }
+
+
+    public float CalculateHitChance(Unit attacker, Unit defender, Board board)
+    {
+
+        if (attacker.EquippedWeapon == null)
+        {
+            Console.WriteLine($"{attacker.Name} has no weapon equipped!");
+            return 0.0f;
+        }
+
+        Tile defenderTile = board.GetTile(defender.X, defender.Y);
+
+        Weapon weapon = attacker.EquippedWeapon;
+
+        CoverType cover = GetFacingCover(defenderTile, attacker);
+        // Calculate hit chance based on weapon accuracy and cover
+        float hitChance = weapon.Accuracy;
+
+        if (cover == CoverType.Full)
+        {
+            hitChance = 0.0f; // Full cover means no chance to hit
+        }
+        else if (cover == CoverType.Half)
+        {
+            hitChance *= 0.5f; // Half cover reduces hit chance by 50%
+        }
+
+        hitChance *= 100; // Convert to percentage (i.e., 0.75 becomes 75%)
+        return hitChance;
     }
 
 
@@ -100,5 +117,32 @@ public class Combat
             }
             return CoverType.None;
         }
+    }
+
+    public List<Unit> GetValidTargets(Unit attacker, Board board)
+    {
+        List<Unit> validTargets = [];
+
+        if (attacker.EquippedWeapon == null)
+        {
+            return validTargets; // No weapon equipped, no valid targets
+        }
+
+        foreach (Unit target in board.ActiveUnits)
+        {
+            if (target.Team == attacker.Team)
+            {
+                continue; // Skip units on the same team
+            }
+            else
+            {
+                int distance = CalculateDistance(attacker.X, attacker.Y, target.X, target.Y);
+                if (distance >= attacker.EquippedWeapon.MinRange && distance <= attacker.EquippedWeapon.MaxRange)
+                {
+                    validTargets.Add(target);
+                }
+            }
+        }
+        return validTargets;
     }
 }

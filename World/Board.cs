@@ -1,9 +1,9 @@
-public class Grid(int width, int height)
+public class Board(int width, int height)
 {
     public int Width { get; } = width;
     public int Height { get; } = height;
-
     private readonly Tile[,] _tile = new Tile[width, height];
+    public List<Unit> ActiveUnits { get; } = [];
 
     public void BuildMap()
     {
@@ -37,6 +37,7 @@ public class Grid(int width, int height)
             _tile[startX, startY].Occupant = unit;
             unit.X = startX;
             unit.Y = startY;
+            ActiveUnits.Add(unit);
         }
     }
 
@@ -47,6 +48,7 @@ public class Grid(int width, int height)
             _tile[unit.X, unit.Y].Occupant = null;
             unit.X = -1;
             unit.Y = -1;
+            ActiveUnits.Remove(unit);
         }
         else
         {
