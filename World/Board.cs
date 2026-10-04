@@ -56,25 +56,31 @@ public class Board(int width, int height)
         }
     }
 
-    public void MoveUnit(Unit unit, int newX, int newY)
+    public bool MoveUnit(Unit unit, int newX, int newY)
     {
         if (!IsInBounds(newX, newY))
         {
             Console.WriteLine("Move is out of bounds!");
-            return;
+            return false;
         }
-        else if (_tile[newX, newY].Occupant != null || !_tile[newX, newY].IsWalkable)
+        else if (_tile[newX, newY].Occupant != null)
         {
-            Console.WriteLine("Tile is blocked or not walkable!");
-            return;
+            Console.WriteLine("Tile is blocked!");
+            return false;
         }
-       else 
-       {
-        _tile[unit.X, unit.Y].Occupant = null;
-        _tile[newX, newY].Occupant = unit;
-        unit.X = newX;
-        unit.Y = newY;
-       }
+        else if (!_tile[newX, newY].IsWalkable)
+        {
+            Console.WriteLine("Tile is not walkable!");
+            return false;
+        }
+        else 
+        {
+            _tile[unit.X, unit.Y].Occupant = null;
+            _tile[newX, newY].Occupant = unit;
+            unit.X = newX;
+            unit.Y = newY;
+            return true;
+        }
     }
 
     public void PrintMap()

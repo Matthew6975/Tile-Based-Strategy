@@ -44,6 +44,7 @@ public class Combat
                 Console.WriteLine($"{defender.Name} has been defeated by {attacker.Name}!");
                 board.DespawnUnit(defender);
             }
+            attacker.ActionPoints --;
         }    
     }
 
