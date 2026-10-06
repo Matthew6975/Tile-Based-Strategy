@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 
 class Program
@@ -14,6 +15,8 @@ class Program
         Unit enemy = new("Enemy", Team.Enemy);
         Unit foe = new("Foe", Team.Enemy);
 
+        List<Unit> allUnits = board.ActiveUnits;
+
         Weapon blaster = new()
         {
             Name = "Blaster",
@@ -23,13 +26,16 @@ class Program
         };
 
         hero.EquippedWeapon = blaster;
+        foe.EquippedWeapon = blaster;
+        enemy.EquippedWeapon = blaster;
 
         TurnManager turnManager = new();
         Combat combatSystem = new();
         EnemyAI enemyAI = new();
+        Utilities utilities = new();
 
         board.SpawnUnit(hero, 0, 0);
-        board.SpawnUnit(enemy, 8, 8);
+        board.SpawnUnit(enemy, 4, 2);
         board.SpawnUnit(foe, 6, 6);
 
         Console.Clear();
@@ -38,6 +44,26 @@ class Program
         bool isRunning = true;
         while (isRunning)
         {
+            // Initialize lists here
+            List<Unit> badGuys = [];
+            List<Unit> goodGuys = [];
+            foreach (Unit unit in allUnits)
+                {
+                    if (unit.Team == Team.Enemy)
+                    {
+                        badGuys.Add(unit);
+                    }
+                    else if (unit.Team == Team.Player)
+                    {
+                        goodGuys.Add(unit);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unit {unit.Name} has Team assigned incorrectly!");
+                    }
+                }
+
+
             if (turnManager.CurrentTurn == Team.Player)
             {
                 Console.WriteLine($"Player position: ({hero.X}, {hero.Y})");
@@ -81,7 +107,9 @@ class Program
                         board.PrintMap();
 
                         Unit currentTarget = validTargets[targetIndex];
-                        float hitChance = combatSystem.CalculateHitChance(hero, currentTarget, board);
+                        Tile targetTile = board.GetTile(currentTarget.X, currentTarget.Y);
+                        Tile originTile = board.GetTile(hero.X, hero.Y);
+                        float hitChance = combatSystem.CalculateHitChance(hero, originTile, targetTile);
 
                         Console.WriteLine("=== TARGETING MODE ===");
                         Console.WriteLine($"Target: {currentTarget.Name} at ({currentTarget.X}, {currentTarget.Y})");
@@ -105,7 +133,7 @@ class Program
                         else if (targetKey == ConsoleKey.F || targetKey == ConsoleKey.Enter)
                         {
                             Console.Clear();
-                            combatSystem.Attack(hero, currentTarget, board);
+                            combatSystem.Attack(hero, targetTile, board);
                             Console.WriteLine("press any key to continue...");
                             Console.ReadKey(true);
                             isTargeting = false;   
@@ -149,24 +177,56 @@ class Program
                 board.PrintMap();
                 Console.WriteLine("Enemy is thinking...");
                 System.Threading.Thread.Sleep(1000); // a 1 sec pause so I can see the enemy actions
-                List<Unit> allUnits = board.ActiveUnits;
-
-                List<Unit> badGuys = [];
-                foreach (Unit unit in allUnits)
-                {
-                    if (unit.Team == Team.Enemy)
-                    {
-                        badGuys.Add(unit);
-                    }
-                }
 
                 foreach (Unit badguy in badGuys)
                 {
-                    List<Tile> path = enemyAI.GetAStarPath(badguy, board.GetTile(hero.X, hero.Y), board);
-                    if (path.Count > 0)
+                    List<Tile> moveList = utilities.BreadthFirstSearch(badguy, board);
+                    Tile bestDest = board.GetTile(badguy.X, badguy.Y);
+                    Unit? bestTarget = null;
+                    int highScore = 0;
+
+                    foreach (Tile tile in moveList)
                     {
-                        path.RemoveAt(path.Count - 1);
-                        
+                        foreach (Unit player in goodGuys)
+                        {
+                            Tile playerTile = board.GetTile(player.X, player.Y);
+                            if (badguy.EquippedWeapon != null)
+                            {
+                                int score = enemyAI.ScoreAction(badguy, tile, playerTile, board);
+
+                                if (score > highScore)
+                                {
+                                    bestDest = tile;
+                                    bestTarget = player;
+                                    highScore = score;
+
+
+                                    // need to fix the fact that if the enemy cannot reach the player this turn with their attack, they will default to not moving
+                                    //this is beacause bestDest demands a non-null value, so I defaulted it to it's own tile. Need to default to an enemy unit.
+                                    
+                                    // if (highScore == 0 && goodGuys.Count > 0)
+                                    // {
+                                    //     Unit nearestPlayer = goodGuys[0];
+                                    //     int shortestDistance = int.MaxValue;
+
+                                    //     foreach (Unit unit in goodGuys)
+                                    //     {
+                                    //         int distance = combatSystem.CalculateDistance(unit.X, unit.Y, badguy.X, badguy.Y);
+                                    //         if (distance < shortestDistance)
+                                    //         {
+                                    //             shortestDistance = distance;
+                                    //             bestDest = board.GetTile(player.X, player.Y);
+                                    //         }
+                                    //     }
+                                    // }
+                                }
+                            }
+                        }
+                    }
+
+                    List<Tile> path = enemyAI.GetAStarPath(badguy, bestDest, board);
+                    if (path.Count > 0)
+                    {                        
                         foreach (Tile step in path)
                         {
                             bool moveCheck = board.MoveUnit(badguy, step.X, step.Y);
@@ -188,6 +248,12 @@ class Program
                                 Console.WriteLine($"{badguy.Name}'s path was blocked!");
                                 break;
                             }
+                        }
+                        if(bestTarget != null && badguy.EquippedWeapon != null)
+                        {
+                            Tile target = board.GetTile(bestTarget.X, bestTarget.Y);
+                            combatSystem.Attack(badguy, target, board);
+                            System.Threading.Thread.Sleep(1000);
                         }
                     }
                 }

@@ -1,7 +1,11 @@
 using System.Diagnostics;
 using System.Dynamic;
+using System.Formats.Tar;
+using System.Net.Mail;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 
 public class PathNode (Board board, int tileX, int tileY, int gcost = 0, int hcost = 0, int fcost = 0, PathNode? parent = null)
 {
@@ -14,6 +18,13 @@ public class PathNode (Board board, int tileX, int tileY, int gcost = 0, int hco
 
 public class EnemyAI
 {
+    Combat combatSystem = new();
+    Utilities utilities = new();
+    /// <summary>
+    /// Uses A* algo to find best route to the target tile.
+    /// NOTE: This route INCLUDES the target tile, so if you are moving toward another unit, 
+    /// the searcher will attempt to move onto the same tile as the target unit. Subtract the final Tile to end naxt to the target.
+    /// </summary>
     public List<Tile> GetAStarPath(Unit searcher, Tile target, Board board)
     {
         PriorityQueue<PathNode, int> openList = new();
@@ -28,9 +39,6 @@ public class EnemyAI
             if (currentNode.Tile == target)
             {
                 // This means I found my target, and I need to trace the route back to my unit.
-
-                // NOTE: This route INCLUDES the target tile, so if you are moving toward another unit, 
-                // the searcher will attempt to move onto the same tile as the target unit.
                 List<Tile> reversedPath = [];
                 while (currentNode.Parent != null)
                 {
@@ -57,28 +65,6 @@ public class EnemyAI
                 }
             }
 
-    // this block is unneeded per the loop above this. Just keeping this here for now because I made it and am attached.
-            // if (board.IsInBounds(currentNode.Tile.X, currentNode.Tile.Y - 1))
-            // {
-            //     Tile up = board.GetTile(currentNode.Tile.X, currentNode.Tile.Y - 1);
-            //     neighbors.Add(up);
-            // }
-            // if (board.IsInBounds(currentNode.Tile.X, currentNode.Tile.Y + 1))
-            // {
-            //     Tile down = board.GetTile(currentNode.Tile.X, currentNode.Tile.Y + 1);
-            //     neighbors.Add(down);
-            // }
-            // if (board.IsInBounds(currentNode.Tile.X-1, currentNode.Tile.Y))
-            // {
-            //     Tile left = board.GetTile(currentNode.Tile.X-1, currentNode.Tile.Y);
-            //     neighbors.Add(left);
-            // }
-            // if (board.IsInBounds(currentNode.Tile.X+1, currentNode.Tile.Y))
-            // {
-            //     Tile right = board.GetTile(currentNode.Tile.X+1, currentNode.Tile.Y);
-            //     neighbors.Add(right);
-            // }
-
             foreach (Tile tile in neighbors)
             {
                 if (!searchedTiles.Contains(tile) && tile.IsWalkable && (!tile.IsOccupied || tile == target))
@@ -95,10 +81,55 @@ public class EnemyAI
 
                     openList.Enqueue(neighborNode, neighborNode.Fcost);
                 }
-
             }
             searchedTiles.Add(currentNode.Tile);
         }
         return [];
+    }
+    public int ScoreAction(Unit attacker, Tile originTile, Tile targetTile, Board board)
+    {
+        int moveScore = 0;
+        int hitChance = combatSystem.CalculateHitChance(attacker, originTile, targetTile);
+        int range = combatSystem.CalculateDistance(originTile.X, originTile.Y, targetTile.X, targetTile.Y);
+        int moveDistance = combatSystem.CalculateDistance(attacker.X, attacker.Y, originTile.X, originTile.Y);
+        CoverType cover = combatSystem.GetFacingCover(originTile, targetTile); //the arguments are flipped here because this is calculating the attack coming back.
+
+        //subtract move distance from score to prioritize efficient movement and help break ties.
+        //this number should be very small. Never larger than unit movement.
+        moveScore -= moveDistance;
+
+        //points for attack logic 
+        if (targetTile.Occupant != null && attacker.EquippedWeapon != null)
+        {
+            //is the target in range?
+            if (range <= attacker.EquippedWeapon.MaxRange && range >= attacker.EquippedWeapon.MinRange)
+            {
+                moveScore += 100;
+            }
+
+            //is there a hit chance?
+            if (hitChance > 0)
+            {
+                moveScore += hitChance;
+            }
+
+            //is the attack lethal?
+            if (targetTile.Occupant.Health <= attacker.EquippedWeapon.Damage)
+            {
+                moveScore += 300;
+            }
+        }
+
+        // adds bonuses for better cover taken. Slightly higher than hit chance boosts to avoid ties
+        // and this favors cover a bit more than damage now
+        if (cover == CoverType.Full)
+        {
+            moveScore += 110;
+        }
+        else if (cover == CoverType.Half)
+        {
+            moveScore += 55;
+        }
+        return moveScore;
     }
 }

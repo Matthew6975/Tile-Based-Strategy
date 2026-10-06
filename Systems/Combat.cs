@@ -1,6 +1,8 @@
+using System.Runtime.Versioning;
+
 public class Combat
 {
-    public void Attack(Unit attacker, Unit defender, Board board)
+    public void Attack(Unit attacker, Tile target, Board board)
     {
         if (attacker.EquippedWeapon == null)
         {
@@ -10,73 +12,85 @@ public class Combat
 
         Weapon weapon = attacker.EquippedWeapon;
 
-        int distance = CalculateDistance(attacker.X, attacker.Y, defender.X, defender.Y);
+        int distance = CalculateDistance(attacker.X, attacker.Y, target.X, target.Y);
 
         if (distance > weapon.MaxRange)
         {
-            Console.WriteLine($"{defender.Name} is out of range for {attacker.Name}'s {weapon.Name}!");
+            Console.WriteLine("The target is out of range for {attacker.Name}'s {weapon.Name}!");
             return;
         }
 
         else if (distance < weapon.MinRange)
         {
-            Console.WriteLine($"{defender.Name} is too close for {attacker.Name}'s {weapon.Name}!");
+            Console.WriteLine("The target is too close for {attacker.Name}'s {weapon.Name}!");
             return;
         }
         else
         {
-            float hitChance = CalculateHitChance(attacker, defender, board);
-
-            int roll = new Random().Next(0, 101);
-            // if roll is smaller (inside) or equal to the hit chance, the attack succeeds.
-            if (roll <= hitChance)
+            if (target.Occupant != null)
             {
-                defender.Health -= weapon.Damage;
-                Console.WriteLine($"{attacker.Name} hits {defender.Name} for {weapon.Damage} damage! {defender.Name} now has {defender.Health} health.");
+                Unit defender = target.Occupant;
+                Tile originTile = board.GetTile(attacker.X, attacker.Y);
+                float hitChance = CalculateHitChance(attacker, originTile, target);
+                int roll = new Random().Next(0, 101);
+                // if roll is smaller (inside) or equal to the hit chance, the attack succeeds.
+                if (roll <= hitChance)
+                {
+                    Console.WriteLine($"{attacker.Name} hits {defender.Name} for {attacker.EquippedWeapon.Damage}!");
+                    TakeDamage(target.Occupant, attacker.EquippedWeapon.Damage, board);
+                }
+                else if (roll > hitChance)
+                {
+                    Console.WriteLine($"{attacker.Name} misses {target.Occupant.Name}!");
+                }
             }
             else
             {
-                Console.WriteLine($"{attacker.Name} misses {defender.Name}!");
-            }
-
-            if (defender.Health <= 0)
-            {
-                Console.WriteLine($"{defender.Name} has been defeated by {attacker.Name}!");
-                board.DespawnUnit(defender);
-            }
+                // The shot hits the cover at the target coordinates. This should allow destructible cover later
+                Console.WriteLine($"{attacker.Name} blasts the empty ground at ({target.X}, {target.Y})!");
+            }           
             attacker.ActionPoints --;
         }    
     }
 
-
-    public float CalculateHitChance(Unit attacker, Unit defender, Board board)
+    public void TakeDamage (Unit target, int amount, Board board)
     {
+        target.Health -= amount;
+        if (target.Health <= 0)
+        {
+            board.DespawnUnit(target);
+            Console.WriteLine($"{target.Name} has been defeated!");
+        }
+    }
 
+    public int CalculateHitChance(Unit attacker, Tile originTile, Tile target)
+    {
         if (attacker.EquippedWeapon == null)
         {
             Console.WriteLine($"{attacker.Name} has no weapon equipped!");
-            return 0.0f;
+            return 0;
         }
 
-        Tile defenderTile = board.GetTile(defender.X, defender.Y);
+        if (target.Occupant == null)
+        {
+            return 100; // If there is no occupant (i.e. an empty tile) the weapon is guarenteed to hit.
+        }
 
         Weapon weapon = attacker.EquippedWeapon;
 
-        CoverType cover = GetFacingCover(defenderTile, attacker);
+        CoverType cover = GetFacingCover(target, originTile);
         // Calculate hit chance based on weapon accuracy and cover
-        float hitChance = weapon.Accuracy;
+        int hitChance = weapon.Accuracy;
 
         if (cover == CoverType.Full)
         {
-            hitChance = 0.0f; // Full cover means no chance to hit
+            hitChance = 0; // Full cover means no chance to hit
         }
         else if (cover == CoverType.Half)
         {
-            hitChance *= 0.5f; // Half cover reduces hit chance by 50%
+            hitChance /= 2; // Half cover reduces hit chance by half
         }
-
-        hitChance *= 100; // Convert to percentage (i.e., 0.75 becomes 75%)
-        return hitChance;
+        return hitChance; 
     }
 
 
@@ -85,10 +99,10 @@ public class Combat
         return Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
     }
 
-    public CoverType GetFacingCover(Tile targetTile, Unit attacker)
+    public CoverType GetFacingCover(Tile targetTile, Tile originTile)
     {
-        int deltaX = attacker.X - targetTile.X;
-        int deltaY = attacker.Y - targetTile.Y;
+        int deltaX = originTile.X - targetTile.X;
+        int deltaY = originTile.Y - targetTile.Y;
 
         // Calculate the absolute values of the differences
         int absX = Math.Abs(deltaX);
