@@ -3,10 +3,14 @@ using System.Drawing;
 using System.Globalization;
 using System.Net.NetworkInformation;
 
+/// <summary>
+/// This class holds utility functions that may need to be called for multiple reasons and are not tightly tied to other specific classes.
+/// </summary>
 public class Utilities
 {
     /// <summary>
-    /// finds all available tiles within a units alotted movement points
+    /// finds all available tiles within a units alotted movement points.
+    /// returns a List<Tile> type.
     /// </summary>
     public List<Tile> BreadthFirstSearch(Unit searcher, Board board)
     {

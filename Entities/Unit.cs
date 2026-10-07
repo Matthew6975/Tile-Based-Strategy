@@ -1,3 +1,6 @@
+///<summary>
+/// Any unit on the board will be this class. Tracks all stats, movepoints, etc.
+/// </summary>
 public class Unit(string name, Team team, int actionPoints = 1)
 {
     public string Name { get; } = name;

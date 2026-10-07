@@ -2,51 +2,63 @@ using System;
 using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 
+//The actual game logic that runs
 class Program
 {
     static void Main()
     {
+        //Sapwn a board, modify some specific tiles
         Board board = new(10, 10);
         board.BuildMap();
         board.GetTile(3, 2).IsWalkable = false;
         board.GetTile(3, 3).IsWalkable = false;
 
+        //create some unit instances
         Unit hero = new("Player", Team.Player);
         Unit enemy = new("Enemy", Team.Enemy);
         Unit foe = new("Foe", Team.Enemy);
 
-        List<Unit> allUnits = board.ActiveUnits;
+        //Spawn each of the units
+        board.SpawnUnit(hero, 0, 0);
+        board.SpawnUnit(enemy, 4, 2);
+        board.SpawnUnit(foe, 6, 6);
 
+        //Initialize a basic weapon
         Weapon blaster = new()
         {
-            Name = "Blaster",
+            Name = "Basic Blaster",
             Damage = 3,
             MinRange = 1,
             MaxRange = 5,
         };
 
+        //equip the basic blaster to each of the unit instances
         hero.EquippedWeapon = blaster;
         foe.EquippedWeapon = blaster;
         enemy.EquippedWeapon = blaster;
 
+        //a list of all units on the board
+        List<Unit> allUnits = board.ActiveUnits;
+
+        //initialize an instance of each class for function calls
         TurnManager turnManager = new();
         Combat combatSystem = new();
         EnemyAI enemyAI = new();
         Utilities utilities = new();
 
-        board.SpawnUnit(hero, 0, 0);
-        board.SpawnUnit(enemy, 4, 2);
-        board.SpawnUnit(foe, 6, 6);
-
+        //clear any old messages in the terminal and print the current state of the board.
         Console.Clear();
         board.PrintMap();
 
+        //Start the game loop
         bool isRunning = true;
         while (isRunning)
         {
-            // Initialize lists here
+            // Initialize lists you want in the loop here
             List<Unit> badGuys = [];
             List<Unit> goodGuys = [];
+
+            //Load the lists
             foreach (Unit unit in allUnits)
                 {
                     if (unit.Team == Team.Enemy)
@@ -59,16 +71,17 @@ class Program
                     }
                     else
                     {
-                        Console.WriteLine($"Unit {unit.Name} has Team assigned incorrectly!");
+                        Console.WriteLine($"Unit {unit.Name} is not on a team!");
                     }
                 }
 
-
+            // PLAYER TURN ---------------------|| targetKey == ConsoleKey.Tab)----------------------------------------------------------------------------------------------------------
             if (turnManager.CurrentTurn == Team.Player)
             {
+                //print basic stats all the time
                 Console.WriteLine($"Player position: ({hero.X}, {hero.Y})");
                 Console.WriteLine($"Current move points: {hero.CurrentMovePoints}");
-                Console.WriteLine($"Enemy Health: {enemy.Health}");
+                Console.WriteLine($"Current player Health: {hero.Health}");
                 Console.WriteLine("Enter a direction to move (W/A/S/D or Arrow Keys), F to target, E to pass turn, or Q to quit:");
 
                 ConsoleKey key = Console.ReadKey(true).Key;
@@ -81,10 +94,10 @@ class Program
                 else if (key == ConsoleKey.A || key == ConsoleKey.LeftArrow) targetX--; // Left
                 else if (key == ConsoleKey.D || key == ConsoleKey.RightArrow) targetX++; // Right
                 else if (key == ConsoleKey.Q) isRunning = false; // Quit
-                else if (key == ConsoleKey.R) // Reset move points. This will be removed after testing
+                else if (key == ConsoleKey.R) // Reset move points for "unlimited" movement. This will be removed after testing
                 {
                     hero.CurrentMovePoints = hero.MaxMovePoints;
-                    Console.WriteLine("Move points reset!");
+                    Console.WriteLine("Move p|| targetKey == ConsoleKey.Tab)oints reset!");
                     continue;
                 }
                 else if (key == ConsoleKey.F) // Enter targeting/attack mode
@@ -103,13 +116,14 @@ class Program
 
                     while (isTargeting)
                     {
+                        //clear screen and start targeting mode UI
                         Console.Clear();
                         board.PrintMap();
 
                         Unit currentTarget = validTargets[targetIndex];
                         Tile targetTile = board.GetTile(currentTarget.X, currentTarget.Y);
                         Tile originTile = board.GetTile(hero.X, hero.Y);
-                        float hitChance = combatSystem.CalculateHitChance(hero, originTile, targetTile);
+                        int hitChance = combatSystem.CalculateHitChance(hero, originTile, targetTile);
 
                         Console.WriteLine("=== TARGETING MODE ===");
                         Console.WriteLine($"Target: {currentTarget.Name} at ({currentTarget.X}, {currentTarget.Y})");
@@ -119,45 +133,52 @@ class Program
 
                         ConsoleKey targetKey = Console.ReadKey(true).Key;
 
-                        if (targetKey == ConsoleKey.RightArrow || targetKey == ConsoleKey.Tab)
+                        //Cycle through available targets. Allows looping.
+                        if (targetKey == ConsoleKey.RightArrow)
                         {
                             targetIndex++;
-                            if(targetIndex >= validTargets.Count()) targetIndex = 0;
+                            if(targetIndex >= validTargets.Count) targetIndex = 0;
                         }
                         else if (targetKey == ConsoleKey.LeftArrow)
                         {
                             targetIndex--;
-                            if (targetIndex < 0) targetIndex = validTargets.Count() -1;
+                            if (targetIndex < 0) targetIndex = validTargets.Count -1;
                             
                         }
+                        //launch the attack against the selected target.
                         else if (targetKey == ConsoleKey.F || targetKey == ConsoleKey.Enter)
                         {
                             Console.Clear();
-                            combatSystem.Attack(hero, targetTile, board);
+                            combatSystem.Attack(hero, targetTile, board); //This prints "who damaged who" dialogue.
                             Console.WriteLine("press any key to continue...");
                             Console.ReadKey(true);
-                            isTargeting = false;   
+                            isTargeting = false; //end targeting UI   
                         }
+                        //end targeting UI
                         else if (targetKey == ConsoleKey.Q || targetKey == ConsoleKey.Escape)
                         {
                             isTargeting = false;
                         }
                     }
+                    //print a new, clean board and repeat loop
                     Console.Clear();
                     board.PrintMap();
                     continue;
                 }
+                //pass turn to the enemy AI
                 else if (key == ConsoleKey.E)
                 {
                     turnManager.EndCurrentTurn(board);
                     continue;
                 }
+                //If any other key is pressed, hadle the exception and re-loop
                 else
                 {
                     Console.WriteLine($"Ignored key: {key}. Use WASD or Arrow Keys.");
                     continue;
                 }
-
+                
+                //Check if the player unit is out of movement for this turn
                 if (hero.CurrentMovePoints <= 0)
                 {
                     Console.Clear();
@@ -166,18 +187,23 @@ class Program
                     continue;
                 }
 
+                //if unit still has movement, move the unit and deduct the movement points
                 Console.Clear();
                 board.MoveUnit(hero, targetX, targetY);
                 hero.CurrentMovePoints--;
                 board.PrintMap();
             }
+
+
+            //ENEMY TURN -----------------------------------------------------------------------------------------------------------------------
             else if (turnManager.CurrentTurn == Team.Enemy)
             {
-                Console.Clear();
+                //print fresh map state
                 board.PrintMap();
                 Console.WriteLine("Enemy is thinking...");
                 System.Threading.Thread.Sleep(1000); // a 1 sec pause so I can see the enemy actions
 
+                // Giant loop to aggregate, score, and execute each of the enemy's potential move options.
                 foreach (Unit badguy in badGuys)
                 {
                     List<Tile> moveList = utilities.BreadthFirstSearch(badguy, board);
@@ -224,40 +250,43 @@ class Program
                         }
                     }
 
+                    //Once the best path/target/destination has been chosen, actually move to execute this course of action.
                     List<Tile> path = enemyAI.GetAStarPath(badguy, bestDest, board);
                     if (path.Count > 0)
                     {                        
                         foreach (Tile step in path)
                         {
-                            bool moveCheck = board.MoveUnit(badguy, step.X, step.Y);
-                            if (moveCheck)
-                            {
-                                badguy.CurrentMovePoints--;
-                                Console.Clear();
-                                board.PrintMap();
-                                System.Threading.Thread.Sleep(500);
-                                if (badguy.CurrentMovePoints == 0)
+                            if (badguy.CurrentMovePoints <= 0)
                                 {
                                     Console.WriteLine($"{badguy.Name} is out of movement!");
                                     break;
                                 }
+
+                            bool moveCheck = board.MoveUnit(badguy, step.X, step.Y);
+                            if (moveCheck)
+                            {
+                                badguy.CurrentMovePoints--;
+                                board.PrintMap();
+                                System.Threading.Thread.Sleep(500); //short pause between each step enemy takes for my inferior, human brain to understand
+                                //Make sure the enemy has movement points
                             }
                             else
                             {
-                                // the path must be blocked, so the loop is ended
+                                // the unit still has movePoints, but the move failed, so the path must be blocked, so the loop is ended
                                 Console.WriteLine($"{badguy.Name}'s path was blocked!");
                                 break;
                             }
                         }
+
+                        //if there is a target and the AI has a weapon, initiate an attack.
                         if(bestTarget != null && badguy.EquippedWeapon != null)
                         {
                             Tile target = board.GetTile(bestTarget.X, bestTarget.Y);
                             combatSystem.Attack(badguy, target, board);
-                            System.Threading.Thread.Sleep(1000);
+                            System.Threading.Thread.Sleep(1000); //another pause for my slow brain.
                         }
                     }
                 }
-                Console.Clear();
                 board.PrintMap();
                 turnManager.EndCurrentTurn(board);
             }

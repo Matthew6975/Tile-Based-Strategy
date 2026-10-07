@@ -1,3 +1,7 @@
+/// <summary>
+/// holds details about a specific weapon.
+/// Modifying these value can make different weapons behave very differently, i.e. Sword vs Siper.
+/// </summary>
 public class Weapon
 {
     public string ?Name { get; set; } // what the weapon is called (blaster, pistol, sniper rifle, etc.)
