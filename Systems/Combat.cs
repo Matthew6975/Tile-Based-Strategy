@@ -19,13 +19,13 @@ public class Combat
         //Is the target within the weapons range(s)?
         if (distance > weapon.MaxRange)
         {
-            Console.WriteLine("The target is out of range for {attacker.Name}'s {weapon.Name}!");
+            Console.WriteLine($"The target is out of range for {attacker.Name}'s {weapon.Name}!");
             return;
         }
 
         else if (distance < weapon.MinRange)
         {
-            Console.WriteLine("The target is too close for {attacker.Name}'s {weapon.Name}!");
+            Console.WriteLine($"The target is too close for {attacker.Name}'s {weapon.Name}!");
             return;
         }
         else

@@ -126,39 +126,25 @@ public class EnemyAI
         //points for attack logic 
         if (targetTile.Occupant != null && attacker.EquippedWeapon != null)
         {
-            //is the target in range?
-            if (range <= attacker.EquippedWeapon.MaxRange && range >= attacker.EquippedWeapon.MinRange)
+            //would the target be in range?
+            if (range <= attacker.EquippedWeapon.MaxRange && range >= attacker.EquippedWeapon.MinRange) 
             {
                 moveScore += 100;
-            }
 
-            //is there a hit chance?
-            if (hitChance > 0)
-            {
-                moveScore += hitChance;
-            }
+                //would there be a hit chance?
+                if (hitChance > 0) moveScore += hitChance;
 
-            //is the attack lethal?
-            if (targetTile.Occupant.Health <= attacker.EquippedWeapon.Damage)
-            {
-                moveScore += 300;
+                //would the attack be lethal?
+                if (targetTile.Occupant.Health <= attacker.EquippedWeapon.Damage) moveScore += 300;
             }
         }
-        else 
-        {
-            Console.WriteLine($"{attacker.Name} Does not have a weapon equipped!");
-        }
+        else Console.WriteLine($"{attacker.Name} Does not have a weapon equipped!");
 
         // adds bonuses for better cover taken. Slightly higher than hit chance boosts to avoid ties
         // and this favors cover a bit more than damage now
-        if (cover == CoverType.Full)
-        {
-            moveScore += 110;
-        }
-        else if (cover == CoverType.Half)
-        {
-            moveScore += 55;
-        }
+        if (cover == CoverType.Full) moveScore += 110;
+        else if (cover == CoverType.Half) moveScore += 55;
+
         return moveScore;
     }
 }

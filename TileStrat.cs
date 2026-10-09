@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
 //The actual game logic that runs
@@ -46,8 +47,7 @@ class Program
         EnemyAI enemyAI = new();
         Utilities utilities = new();
 
-        //clear any old messages in the terminal and print the current state of the board.
-        Console.Clear();
+        //print the current state of the board
         board.PrintMap();
 
         //Start the game loop
@@ -75,33 +75,92 @@ class Program
                     }
                 }
 
-            // PLAYER TURN ---------------------|| targetKey == ConsoleKey.Tab)----------------------------------------------------------------------------------------------------------
+            // PLAYER TURN \\-----------------------------------------------------------------------------------------------------------------
             if (turnManager.CurrentTurn == Team.Player)
             {
                 //print basic stats all the time
                 Console.WriteLine($"Player position: ({hero.X}, {hero.Y})");
                 Console.WriteLine($"Current move points: {hero.CurrentMovePoints}");
                 Console.WriteLine($"Current player Health: {hero.Health}");
-                Console.WriteLine("Enter a direction to move (W/A/S/D or Arrow Keys), F to target, E to pass turn, or Q to quit:");
+                Console.WriteLine("Enter M to preview movement, F to target, E to pass turn, or Q to quit:");
 
                 ConsoleKey key = Console.ReadKey(true).Key;
 
-                int targetX = hero.X;
-                int targetY = hero.Y;
-
-                if (key == ConsoleKey.W || key == ConsoleKey.UpArrow) targetY--; // Up
-                else if (key == ConsoleKey.S || key == ConsoleKey.DownArrow) targetY++; // Down
-                else if (key == ConsoleKey.A || key == ConsoleKey.LeftArrow) targetX--; // Left
-                else if (key == ConsoleKey.D || key == ConsoleKey.RightArrow) targetX++; // Right
-                else if (key == ConsoleKey.Q) isRunning = false; // Quit
+                if (key == ConsoleKey.Q) isRunning = false; // Quit
                 else if (key == ConsoleKey.R) // Reset move points for "unlimited" movement. This will be removed after testing
                 {
                     hero.CurrentMovePoints = hero.MaxMovePoints;
-                    Console.WriteLine("Move p|| targetKey == ConsoleKey.Tab)oints reset!");
+                    Console.WriteLine("Move points reset!");
                     continue;
                 }
+
+                // The player is moving their unit
+                else if (key == ConsoleKey.M || key == ConsoleKey.LeftArrow || key == ConsoleKey.RightArrow || key == ConsoleKey.UpArrow || key == ConsoleKey.DownArrow)
+                {
+                    List<Tile> allowedSpaces = utilities.BreadthFirstSearch(hero, board);
+
+                    // location of ghost entitiy for preview
+                    int targetX = hero.X;
+                    int targetY = hero.Y;
+
+                    bool isPreviewing = true;
+
+                    while (isPreviewing)
+                    {
+                        //pass in values so it displays the preview unit on the map, but no game logic sees it.
+                        board.PrintMap(targetX, targetY);
+                        Console.WriteLine("=== PREVIEW MODE===");
+                        Console.WriteLine($"Remaining movement: {hero.CurrentMovePoints}");
+                        Console.WriteLine($"Previewing ({targetX}, {targetY})");
+                        Console.WriteLine("Press (W/A/S/D) to move, Enter to confirm, or Escape to cancel.");
+
+                        int newX = targetX;
+                        int newY = targetY;
+
+                        ConsoleKey moveKey = Console.ReadKey(true).Key;
+                        
+                        if (moveKey == ConsoleKey.W || moveKey == ConsoleKey.UpArrow) newY--; // Up
+                        else if (moveKey == ConsoleKey.S || moveKey == ConsoleKey.DownArrow) newY++; // Down
+                        else if (moveKey == ConsoleKey.A || moveKey == ConsoleKey.LeftArrow) newX--; // Left
+                        else if (moveKey == ConsoleKey.D || moveKey == ConsoleKey.RightArrow) newX++; // Right
+                        else if (moveKey == ConsoleKey.Escape) 
+                        {
+                            isPreviewing = false;
+                            break;
+                        }
+                        // The players hits enter to confirm move decision
+                        else if (moveKey == ConsoleKey.Enter)
+                        {
+                            int cost = combatSystem.CalculateDistance(targetX, targetY, hero.X, hero.Y);
+                            board.MoveUnit(hero, targetX, targetY);
+                            hero.CurrentMovePoints -= cost;
+
+                            isPreviewing = false;
+                        }
+                        if (board.IsInBounds(newX, newY))
+                        {
+                            Tile targetTile = board.GetTile(newX, newY);
+
+                            if (allowedSpaces.Contains(targetTile))
+                            {
+                                targetX = newX;
+                                targetY = newY;
+                            }
+                        }
+                    } 
+                    board.PrintMap();
+                    hero.CurrentMovePoints = 0;
+                    continue;
+                } 
                 else if (key == ConsoleKey.F) // Enter targeting/attack mode
                 {
+                    if (hero.ActionPoints <= 0)
+                    {
+                        Console.WriteLine($"{hero.Name} is out of action points! Press any key...");
+                        Console.ReadKey(true);
+                        continue;
+                    }
+
                     List<Unit> validTargets = combatSystem.GetValidTargets(hero, board);
 
                     if (validTargets.Count == 0)
@@ -117,7 +176,6 @@ class Program
                     while (isTargeting)
                     {
                         //clear screen and start targeting mode UI
-                        Console.Clear();
                         board.PrintMap();
 
                         Unit currentTarget = validTargets[targetIndex];
@@ -161,7 +219,6 @@ class Program
                         }
                     }
                     //print a new, clean board and repeat loop
-                    Console.Clear();
                     board.PrintMap();
                     continue;
                 }
@@ -174,36 +231,23 @@ class Program
                 //If any other key is pressed, hadle the exception and re-loop
                 else
                 {
+                    Console.Clear();
+                    board.PrintMap();
                     Console.WriteLine($"Ignored key: {key}. Use WASD or Arrow Keys.");
                     continue;
                 }
-                
-                //Check if the player unit is out of movement for this turn
-                if (hero.CurrentMovePoints <= 0)
-                {
-                    Console.Clear();
-                    board.PrintMap();
-                    Console.WriteLine("No more move points available!");
-                    continue;
-                }
-
-                //if unit still has movement, move the unit and deduct the movement points
-                Console.Clear();
-                board.MoveUnit(hero, targetX, targetY);
-                hero.CurrentMovePoints--;
-                board.PrintMap();
             }
 
 
             //ENEMY TURN -----------------------------------------------------------------------------------------------------------------------
             else if (turnManager.CurrentTurn == Team.Enemy)
             {
-                //print fresh map state
+                //update map state
                 board.PrintMap();
                 Console.WriteLine("Enemy is thinking...");
                 System.Threading.Thread.Sleep(1000); // a 1 sec pause so I can see the enemy actions
 
-                // Giant loop to aggregate, score, and execute each of the enemy's potential move options.
+                //Loop to find and score each of the enemy's potential move options and execute the best move
                 foreach (Unit badguy in badGuys)
                 {
                     List<Tile> moveList = utilities.BreadthFirstSearch(badguy, board);
@@ -225,27 +269,38 @@ class Program
                                     bestDest = tile;
                                     bestTarget = player;
                                     highScore = score;
-
-
-                                    // need to fix the fact that if the enemy cannot reach the player this turn with their attack, they will default to not moving
-                                    //this is beacause bestDest demands a non-null value, so I defaulted it to it's own tile. Need to default to an enemy unit.
-                                    
-                                    // if (highScore == 0 && goodGuys.Count > 0)
-                                    // {
-                                    //     Unit nearestPlayer = goodGuys[0];
-                                    //     int shortestDistance = int.MaxValue;
-
-                                    //     foreach (Unit unit in goodGuys)
-                                    //     {
-                                    //         int distance = combatSystem.CalculateDistance(unit.X, unit.Y, badguy.X, badguy.Y);
-                                    //         if (distance < shortestDistance)
-                                    //         {
-                                    //             shortestDistance = distance;
-                                    //             bestDest = board.GetTile(player.X, player.Y);
-                                    //         }
-                                    //     }
-                                    // }
                                 }
+                            }
+                        }
+                    }
+
+                    // If there is no scoring move and there are player units on the board, 
+                    // have the unit move towards the closest player unit
+                    if (highScore == 0 && goodGuys.Count > 0)
+                    {
+                        Unit nearestPlayer = goodGuys[0];
+                        int shortestDistance = int.MaxValue;
+
+                        foreach (Unit unit in goodGuys)
+                        {
+                            //find the closest player unit
+                            int distance = combatSystem.CalculateDistance(unit.X, unit.Y, badguy.X, badguy.Y);
+                            if (distance < shortestDistance)
+                            {
+                                shortestDistance = distance;
+                                nearestPlayer = unit;
+                            }
+                        }
+                        // out of the potential moves from my breadth first search, find the tile closest to closest player unit so we can start moving towards it. 
+                        // I need this rather than just passing the nearest player tile to A*
+                        int closestTileDist = int.MaxValue;
+                        foreach (Tile tile in moveList)
+                        {
+                            int distance = combatSystem.CalculateDistance(tile.X, tile.Y, nearestPlayer.X, nearestPlayer.Y);
+                            if (distance < closestTileDist)
+                            {
+                                closestTileDist = distance;
+                                bestDest = tile;
                             }
                         }
                     }
@@ -277,13 +332,23 @@ class Program
                                 break;
                             }
                         }
+                    }
 
-                        //if there is a target and the AI has a weapon, initiate an attack.
-                        if(bestTarget != null && badguy.EquippedWeapon != null)
+                    //if there is a target, the AI has a weapon, and the target is in range, initiate an attack.
+                    if (bestTarget != null && badguy.EquippedWeapon != null)
+                    {
+                        int rangeToTarget = combatSystem.CalculateDistance (badguy.X, badguy.Y, bestTarget.X, bestTarget.Y);
+                        if (rangeToTarget <= badguy.EquippedWeapon.MaxRange && rangeToTarget >= badguy.EquippedWeapon.MinRange)
                         {
                             Tile target = board.GetTile(bestTarget.X, bestTarget.Y);
                             combatSystem.Attack(badguy, target, board);
-                            System.Threading.Thread.Sleep(1000); //another pause for my slow brain.
+                            if (!target.IsOccupied && !board.ActiveUnits.Contains(bestTarget)) goodGuys.Remove(bestTarget);
+                            System.Threading.Thread.Sleep(1000); //another 1 second pause for my slow brain.
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{badguy.Name} is not in range to attack {bestTarget.Name}!");
+                            System.Threading.Thread.Sleep(1000);
                         }
                     }
                 }

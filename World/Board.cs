@@ -86,7 +86,7 @@ public class Board(int width, int height)
             Console.WriteLine("Move is out of bounds!");
             return false;
         }
-        else if (_tile[newX, newY].Occupant != null)
+        else if (_tile[newX, newY].Occupant != null && _tile[newX, newY].Occupant != unit)
         {
             Console.WriteLine("Tile is blocked!");
             return false;
@@ -109,7 +109,7 @@ public class Board(int width, int height)
     /// <summary>
     /// displays the test map in the terminal
     /// </summary>
-    public void PrintMap()
+    public void PrintMap(int previewX = -1, int previewY = -1)
     {
         //clear any old messages on the terminal, then print updated board.
         Console.Clear();
@@ -119,22 +119,11 @@ public class Board(int width, int height)
             {
                 Tile tile = _tile[x, y];
                 Console.Write(tile.IsWalkable ? "." : "#");
-                if (tile.Occupant == null)
-                {
-                    Console.Write("_ ");
-                }
-                else if (tile.Occupant.Team == Team.Player)
-                {
-                    Console.Write("P ");
-                }
-                else if (tile.Occupant.Team == Team.Enemy)
-                {
-                    Console.Write("E ");
-                }
-                else
-                {
-                    Console.Write(". ");
-                }
+                if (x == previewX && y == previewY) Console.Write("X ");
+                else if (tile.Occupant == null) Console.Write("_ ");
+                else if (tile.Occupant.Team == Team.Player) Console.Write("P ");
+                else if (tile.Occupant.Team == Team.Enemy) Console.Write("E ");
+                else Console.Write(". ");
 
             }
             Console.WriteLine();
