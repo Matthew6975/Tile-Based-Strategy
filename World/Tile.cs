@@ -8,7 +8,7 @@ public class Tile(int x, int y, int level = 1, bool isWalkable = true)
     public bool IsWalkable { get; set; } = isWalkable;
     public Unit? Occupant { get; set; } = null;
     public bool IsOccupied => Occupant != null;
-    public int elevation = level;
+    public int Elevation = level;
 
 
     public CoverType NorthCover { get; set; } = CoverType.None;

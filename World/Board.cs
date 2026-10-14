@@ -1,4 +1,3 @@
-
 /// <summary>
 /// This class tracks everything to do with each map. Including what tile is on each space, where units are,
 /// spawning units, despawning units, moving units, board creation, etc.

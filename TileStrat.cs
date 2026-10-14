@@ -1,8 +1,3 @@
-using System;
-using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-
 //The actual game logic that runs
 class Program
 {

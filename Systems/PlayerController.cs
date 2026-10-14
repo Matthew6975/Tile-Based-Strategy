@@ -1,8 +1,10 @@
-public class PlayerController(Combat combatSystem, Utilities utilities)
+public class PlayerController(Combat combatSystem, Pathing pathing)
 {
+    private int selectedUnitIndex = 0;
+
     public void RunMovementPreview(Unit activeUnit, Board board)
     {
-        List<Tile> allowedSpaces = utilities.BreadthFirstSearch(activeUnit, board);
+        Dictionary<Tile, int> allowedSpaces = pathing.BreadthFirstSearch(activeUnit, board);
 
         // location of ghost entitiy for preview
         int targetX = activeUnit.X;
@@ -16,7 +18,7 @@ public class PlayerController(Combat combatSystem, Utilities utilities)
             board.PrintMap(targetX, targetY);
             Console.WriteLine("=== PREVIEW MODE===");
             Console.WriteLine($"Remaining movement: {activeUnit.CurrentMovePoints}");
-            Console.WriteLine($"Previewing ({targetX}, {targetY})");
+            Console.WriteLine($"Previewing ({targetX}, {targetY}) | Move Cost: {allowedSpaces[board.GetTile(targetX, targetY)]}");
             Console.WriteLine("Press (W/A/S/D) to move, Enter to confirm, or Escape to cancel.");
 
             int newX = targetX;
@@ -35,9 +37,11 @@ public class PlayerController(Combat combatSystem, Utilities utilities)
             // The players hits enter to confirm move decision
             else if (moveKey == ConsoleKey.Enter)
             {
-                int cost = combatSystem.CalculateDistance(targetX, targetY, activeUnit.X, activeUnit.Y);
-                board.MoveUnit(activeUnit, targetX, targetY);
-                activeUnit.CurrentMovePoints -= cost;
+                int cost = allowedSpaces[board.GetTile(targetX, targetY)];
+                if (board.MoveUnit(activeUnit, targetX, targetY))
+                {
+                    activeUnit.CurrentMovePoints -= cost;
+                }
 
                 isPreviewing = false;
             }
@@ -45,7 +49,7 @@ public class PlayerController(Combat combatSystem, Utilities utilities)
             {
                 Tile targetTile = board.GetTile(newX, newY);
 
-                if (allowedSpaces.Contains(targetTile))
+                if (allowedSpaces.ContainsKey(targetTile))
                 {
                     targetX = newX;
                     targetY = newY;
@@ -95,7 +99,7 @@ public class PlayerController(Combat combatSystem, Utilities utilities)
                 ConsoleKey targetKey = Console.ReadKey(true).Key;
 
                 //Cycle through available targets. Allows looping.
-                if (targetKey == ConsoleKey.RightArrow)
+                if (targetKey == ConsoleKey.RightArrow || targetKey == ConsoleKey.Tab)
                 {
                     targetIndex++;
                     if(targetIndex >= validTargets.Count) targetIndex = 0;
@@ -124,5 +128,72 @@ public class PlayerController(Combat combatSystem, Utilities utilities)
             //print a new, clean board and repeat loop
             board.PrintMap();
             return;
+    }
+
+    public bool ExecutePlayerTurn(List<Unit> goodGuys, TurnManager turnManager, Board board)
+    {
+        // Safety check: if all player units were defeated, end the game
+        if (goodGuys.Count == 0)
+        {
+            Console.WriteLine("All player units defeated! Game Over.");
+            return false; // Quit
+        }
+
+        // Clamp index in case a unit died last turn and shrunk the list
+        if (selectedUnitIndex >= goodGuys.Count)
+        {
+            selectedUnitIndex = 0;
+        }
+
+        Unit activeUnit = goodGuys[selectedUnitIndex];
+
+
+        // Print stats for whichever unit is currently selected
+        Console.WriteLine($"=== Selected Unit: {activeUnit.Name} ({selectedUnitIndex + 1}/{goodGuys.Count}) ===");
+        Console.WriteLine($"Position: ({activeUnit.X}, {activeUnit.Y}) | Health: {activeUnit.Health}");
+        Console.WriteLine($"Move Points: {activeUnit.CurrentMovePoints} | Action Points: {activeUnit.ActionPoints}");
+        Console.WriteLine("Press [Tab] to switch unit, [M] to move, [F] to target, [E] to pass turn, or [Q] to quit:");
+
+        ConsoleKey key = Console.ReadKey(true).Key;
+
+        if (key == ConsoleKey.Q) return false; // Quit
+        else if (key == ConsoleKey.R) // Reset move points for "unlimited" movement. This will be removed after testing
+        {
+            activeUnit.CurrentMovePoints = activeUnit.MaxMovePoints;
+            board.PrintMap();
+            Console.WriteLine("Move points reset!");
+        }
+
+        else if (key == ConsoleKey.Tab)
+        {
+            selectedUnitIndex++;
+            if (selectedUnitIndex >= goodGuys.Count)
+            {
+                selectedUnitIndex = 0; // Wrap back to the first unit
+            }
+            board.PrintMap();
+        }
+
+        // The player is moving their unit
+        else if (key == ConsoleKey.M || key == ConsoleKey.LeftArrow || key == ConsoleKey.RightArrow || key == ConsoleKey.UpArrow || key == ConsoleKey.DownArrow)
+        {
+            RunMovementPreview(activeUnit, board);
+        } 
+        else if (key == ConsoleKey.F) // Enter targeting/attack mode
+        {
+            RunTargetingMode(activeUnit, board);  
+        }
+        //pass turn to the enemy AI
+        else if (key == ConsoleKey.E)
+        {
+            turnManager.EndCurrentTurn(board);
+        }
+        //If any other key is pressed, hadle the exception and re-loop
+        else
+        {
+            board.PrintMap();
+            Console.WriteLine($"Ignored key: {key}. Use WASD or Arrow Keys.");
+        }
+        return true;
     }
 }

@@ -1,5 +1,3 @@
-using System.Net.NetworkInformation;
-
 /// <summary>
 /// This class handles the turn order and resets unit movement, action points, and other abilities each turn loop.
 /// Could modify to allow abilities to "cool down" over multiple turns if wanted

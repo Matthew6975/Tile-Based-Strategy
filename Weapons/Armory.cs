@@ -1,4 +1,3 @@
-// Weapons/Armory.cs
 public static class  Armory
 {
     public static List<Weapon> Weapons { get; } =
