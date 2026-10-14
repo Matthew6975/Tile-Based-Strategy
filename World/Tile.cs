@@ -1,13 +1,14 @@
 /// <summary>
 /// This class tracks the terrain for locations on the board, as well as what kind of cover the space provides
 /// </summary>
-public class Tile(int x, int y, bool isWalkable = true)
+public class Tile(int x, int y, int level = 1, bool isWalkable = true)
 {
     public int X { get; } = x;
     public int Y { get; } = y;
     public bool IsWalkable { get; set; } = isWalkable;
     public Unit? Occupant { get; set; } = null;
     public bool IsOccupied => Occupant != null;
+    public int elevation = level;
 
 
     public CoverType NorthCover { get; set; } = CoverType.None;

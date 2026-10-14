@@ -125,7 +125,6 @@ class Program
                         else if (moveKey == ConsoleKey.D || moveKey == ConsoleKey.RightArrow) newX++; // Right
                         else if (moveKey == ConsoleKey.Escape) 
                         {
-                            isPreviewing = false;
                             break;
                         }
                         // The players hits enter to confirm move decision
@@ -262,7 +261,7 @@ class Program
                             Tile playerTile = board.GetTile(player.X, player.Y);
                             if (badguy.EquippedWeapon != null)
                             {
-                                int score = enemyAI.ScoreAction(badguy, tile, playerTile, board);
+                                int score = enemyAI.ScoreAction(badguy, tile, playerTile);
 
                                 if (score > highScore)
                                 {

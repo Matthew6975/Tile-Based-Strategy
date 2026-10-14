@@ -106,7 +106,7 @@ public class EnemyAI
     /// 3. Lethality of attack
     /// 4. In range to attack after move
     /// </summary>
-    public int ScoreAction(Unit attacker, Tile originTile, Tile targetTile, Board board)
+    public int ScoreAction(Unit attacker, Tile originTile, Tile targetTile)
     {
         //the score that is eventually returned
         int moveScore = 0;
