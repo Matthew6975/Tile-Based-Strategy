@@ -147,4 +147,119 @@ public class EnemyAI
 
         return moveScore;
     }
+
+    public void ExecuteEnemyTurn (Board board, List<Unit> badGuys, List<Unit> goodGuys, Utilities utilities)
+    {
+        //update map state
+        board.PrintMap();
+        Console.WriteLine("Enemy is thinking...");
+        System.Threading.Thread.Sleep(1000); // a 1 sec pause so I can see the enemy actions
+
+        //Loop to find and score each of the enemy's potential move options and execute the best move
+        foreach (Unit badguy in badGuys)
+        {
+            List<Tile> moveList = utilities.BreadthFirstSearch(badguy, board);
+            Tile bestDest = board.GetTile(badguy.X, badguy.Y);
+            Unit? bestTarget = null;
+            int highScore = 0;
+
+            foreach (Tile tile in moveList)
+            {
+                foreach (Unit player in goodGuys)
+                {
+                    Tile playerTile = board.GetTile(player.X, player.Y);
+                    if (badguy.EquippedWeapon != null)
+                    {
+                        int score = ScoreAction(badguy, tile, playerTile);
+
+                        if (score > highScore)
+                        {
+                            bestDest = tile;
+                            bestTarget = player;
+                            highScore = score;
+                        }
+                    }
+                }
+            }
+
+            // If there is no scoring move and there are player units on the board, 
+            // have the unit move towards the closest player unit
+            if (highScore == 0 && goodGuys.Count > 0)
+            {
+                Unit nearestPlayer = goodGuys[0];
+                int shortestDistance = int.MaxValue;
+
+                foreach (Unit unit in goodGuys)
+                {
+                    //find the closest player unit
+                    int distance = combatSystem.CalculateDistance(unit.X, unit.Y, badguy.X, badguy.Y);
+                    if (distance < shortestDistance)
+                    {
+                        shortestDistance = distance;
+                        nearestPlayer = unit;
+                    }
+                }
+                // out of the potential moves from my breadth first search, find the tile closest to closest player unit so we can start moving towards it. 
+                // I need this rather than just passing the nearest player tile to A*
+                int closestTileDist = int.MaxValue;
+                foreach (Tile tile in moveList)
+                {
+                    int distance = combatSystem.CalculateDistance(tile.X, tile.Y, nearestPlayer.X, nearestPlayer.Y);
+                    if (distance < closestTileDist)
+                    {
+                        closestTileDist = distance;
+                        bestDest = tile;
+                    }
+                }
+            }
+
+            //Once the best path/target/destination has been chosen, actually move to execute this course of action.
+            List<Tile> path = GetAStarPath(badguy, bestDest, board);
+            if (path.Count > 0)
+            {                        
+                foreach (Tile step in path)
+                {
+                    if (badguy.CurrentMovePoints <= 0)
+                        {
+                            Console.WriteLine($"{badguy.Name} is out of movement!");
+                            break;
+                        }
+
+                    bool moveCheck = board.MoveUnit(badguy, step.X, step.Y);
+                    if (moveCheck)
+                    {
+                        badguy.CurrentMovePoints--;
+                        board.PrintMap();
+                        System.Threading.Thread.Sleep(500); //short pause between each step enemy takes for my inferior, human brain to understand
+                        //Make sure the enemy has movement points
+                    }
+                    else
+                    {
+                        // the unit still has movePoints, but the move failed, so the path must be blocked, so the loop is ended
+                        Console.WriteLine($"{badguy.Name}'s path was blocked!");
+                        break;
+                    }
+                }
+            }
+
+            //if there is a target, the AI has a weapon, and the target is in range, initiate an attack.
+            if (bestTarget != null && badguy.EquippedWeapon != null)
+            {
+                int rangeToTarget = combatSystem.CalculateDistance (badguy.X, badguy.Y, bestTarget.X, bestTarget.Y);
+                if (rangeToTarget <= badguy.EquippedWeapon.MaxRange && rangeToTarget >= badguy.EquippedWeapon.MinRange)
+                {
+                    Tile target = board.GetTile(bestTarget.X, bestTarget.Y);
+                    combatSystem.Attack(badguy, target, board);
+                    if (!target.IsOccupied && !board.ActiveUnits.Contains(bestTarget)) goodGuys.Remove(bestTarget);
+                    System.Threading.Thread.Sleep(1000); //another 1 second pause for my slow brain.
+                }
+                else
+                {
+                    Console.WriteLine($"{badguy.Name} is not in range to attack {bestTarget.Name}!");
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
+        }
+        board.PrintMap();
+    }
 }

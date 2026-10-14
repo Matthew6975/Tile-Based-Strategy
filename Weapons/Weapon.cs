@@ -1,6 +1,6 @@
 /// <summary>
 /// holds details about a specific weapon.
-/// Modifying these value can make different weapons behave very differently, i.e. Sword vs Siper.
+/// Modifying these value can make different weapons behave very differently, i.e. Sword vs Sniper vs Shotgun.
 /// </summary>
 public class Weapon
 {
