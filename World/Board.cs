@@ -1,3 +1,7 @@
+using System.Data;
+using System.Xml.Schema;
+
+
 /// <summary>
 /// This class tracks everything to do with each map. Including what tile is on each space, where units are,
 /// spawning units, despawning units, moving units, board creation, etc.
@@ -128,5 +132,47 @@ public class Board(int width, int height)
             Console.WriteLine();
         }   
         Console.WriteLine();
+    }
+
+    public List<Tile> GetEnemySpawnZone()
+    {
+        List<Tile> spawnArea = [];
+        int numRows = Height / 4;
+        if (numRows < 2) numRows = 2;
+        else if (numRows > 4) numRows = 4;
+
+        for (int y = 0; y < numRows; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                Tile tile = GetTile(x, y);
+                if (tile.IsWalkable && !tile.IsOccupied)
+                {
+                    spawnArea.Add(tile);
+                }
+            }
+        }
+        return spawnArea;
+    }
+
+    public List<Tile> GetPlayerSpawnZone()
+    {
+        List<Tile> spawnArea = [];
+        int numRows = Height / 4;
+        if (numRows < 2) numRows = 2;
+        else if (numRows > 4) numRows = 4;
+
+        for (int y = Height - numRows; y < Height; y++)
+        {
+            for (int x = 0; x <Width; x++)
+            {
+                Tile tile = GetTile(x, y);
+                if (tile.IsWalkable && !tile.IsOccupied)
+                {
+                    spawnArea.Add(tile);
+                }
+            }
+        }
+        return spawnArea;
     }
 }

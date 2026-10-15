@@ -35,7 +35,7 @@ public class Combat
                 Unit defender = target.Occupant;
                 Tile originTile = board.GetTile(attacker.X, attacker.Y);
                 float hitChance = CalculateHitChance(attacker, originTile, target);
-                int roll = new Random().Next(1, 101);
+                int roll = Random.Shared.Next(1, 101);
                 // if roll is smaller (inside) or equal to the hit chance, the attack succeeds.
                 if (roll <= hitChance)
                 {
