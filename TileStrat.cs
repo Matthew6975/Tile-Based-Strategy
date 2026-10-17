@@ -11,6 +11,7 @@ class Program
         board.BuildMap();
 
         Spawner spawner = new(board);
+        spawner.SpawnCover(match);
         spawner.SpawnEnemies(match);
         spawner.SpawnPlayers(match);
 

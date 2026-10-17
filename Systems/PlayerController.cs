@@ -19,6 +19,7 @@ public class PlayerController(Combat combatSystem, Pathing pathing)
             Console.WriteLine("=== PREVIEW MODE===");
             Console.WriteLine($"Remaining movement: {activeUnit.CurrentMovePoints}");
             Console.WriteLine($"Previewing ({targetX}, {targetY}) | Move Cost: {allowedSpaces[board.GetTile(targetX, targetY)]}");
+            Console.WriteLine(activeUnit.EquippedWeapon != null ? $"{activeUnit.Name}'s Weapon: < {activeUnit.EquippedWeapon.Name} > (DMG: {activeUnit.EquippedWeapon.Damage}), (Range: {activeUnit.EquippedWeapon.MaxRange})" : $"{activeUnit.Name} does not have a weapon equipped.");
             Console.WriteLine("Press (W/A/S/D) to move, Enter to confirm, or Escape to cancel.");
 
             int newX = targetX;
@@ -91,6 +92,7 @@ public class PlayerController(Combat combatSystem, Pathing pathing)
                 int hitChance = combatSystem.CalculateHitChance(activeUnit, originTile, targetTile);
 
                 Console.WriteLine("=== TARGETING MODE ===");
+                Console.WriteLine(activeUnit.EquippedWeapon != null ? $"{activeUnit.Name}'s Weapon: < {activeUnit.EquippedWeapon.Name} > (DMG: {activeUnit.EquippedWeapon.Damage}), (Range: {activeUnit.EquippedWeapon.MaxRange})" : $"{activeUnit.Name} does not have a weapon equipped.");
                 Console.WriteLine($"Target: {currentTarget.Name} at ({currentTarget.X}, {currentTarget.Y})");
                 Console.WriteLine($"Hit Chance: {hitChance}% | Target Health: {currentTarget.Health}");
                 Console.WriteLine("Use Left/Right Arrows or Tab to cycle targets.");
@@ -150,6 +152,7 @@ public class PlayerController(Combat combatSystem, Pathing pathing)
 
         // Print stats for whichever unit is currently selected
         Console.WriteLine($"=== Selected Unit: {activeUnit.Name} ({selectedUnitIndex + 1}/{goodGuys.Count}) ===");
+        Console.WriteLine(activeUnit.EquippedWeapon != null ? $"{activeUnit.Name}'s Weapon: < {activeUnit.EquippedWeapon.Name} > (DMG: {activeUnit.EquippedWeapon.Damage}), (Range: {activeUnit.EquippedWeapon.MaxRange})" : $"{activeUnit.Name} does not have a weapon equipped.");
         Console.WriteLine($"Position: ({activeUnit.X}, {activeUnit.Y}) | Health: {activeUnit.Health}");
         Console.WriteLine($"Move Points: {activeUnit.CurrentMovePoints} | Action Points: {activeUnit.ActionPoints}");
         Console.WriteLine("Press [Tab] to switch unit, [M] to move, [F] to target, [E] to pass turn, or [Q] to quit:");

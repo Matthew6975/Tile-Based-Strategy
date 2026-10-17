@@ -23,6 +23,7 @@ public class StartMenu
             string[] options = [
                 $"Map Width:    < {config.MapWidth} >",
                 $"Map Height:   < {config.MapHeight} >",
+                $"Cover Level:  < {config.CoverChoice} >",
                 $"Player Units: < {config.PlayerUnitCount} >",
                 $"Enemy Count:  < {config.EnemyUnitCount} >",
                 "[ Next: Squad Loadout ]"
@@ -44,10 +45,15 @@ public class StartMenu
                 
                 if (selectedIndex == 0) config.MapWidth = Math.Clamp(config.MapWidth + delta, 5, 30);
                 else if (selectedIndex == 1) config.MapHeight = Math.Clamp(config.MapHeight + delta, 5, 30);
-                else if (selectedIndex == 2) config.PlayerUnitCount = Math.Clamp(config.PlayerUnitCount + delta, 1, 4);
-                else if (selectedIndex == 3) config.EnemyUnitCount = Math.Clamp(config.EnemyUnitCount + delta, 1, 10);
+                else if (selectedIndex == 2)
+                {
+                    int count = Enum.GetValues<CoverLevel>().Length;
+                    config.CoverChoice = (CoverLevel)(((int)config.CoverChoice + delta + count) % count);
+                }
+                else if (selectedIndex == 3) config.PlayerUnitCount = Math.Clamp(config.PlayerUnitCount + delta, 1, 4);
+                else if (selectedIndex == 4) config.EnemyUnitCount = Math.Clamp(config.EnemyUnitCount + delta, 1, 10);
             }
-            else if (key == ConsoleKey.Enter && selectedIndex == 4)
+            else if (key == ConsoleKey.Enter && selectedIndex == options.Length -1)
             {
                 isConfiguring = false;
             }
@@ -72,7 +78,6 @@ public class StartMenu
                 Weapon w = Armory.Weapons[weaponSelections[i]];
                 string line = $"Unit {i + 1} Weapon: < {w.Name} > (DMG: {w.Damage}), (Range: {w.MaxRange})";
                 
-                // Print with the cursor check (i == selectedIndex) just like Stage 1
                 Console.WriteLine(i == selectedIndex ? $"> {line}" : $"  {line}");
             }
 

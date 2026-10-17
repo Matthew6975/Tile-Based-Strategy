@@ -7,4 +7,5 @@ public class MatchConfig
     public int EnemyUnitCount { get; set; } = 3;
     public List<Unit> EnemyUnits { get; set; } = [];
     public List<Unit> PlayerUnits { get; set; } = [];
+    public CoverLevel CoverChoice { get; set; } = CoverLevel.Off;
 }
